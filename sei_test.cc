@@ -30,6 +30,7 @@ int main(void)
     std::unique_ptr<rtc::Buffer> sei_nalu = std::make_unique<rtc::Buffer>();
     WriteSeiNalu((const uint8_t *)(sei_data.data()),
                  sei_data.size(),
+                 5,
                  TEST_UUID,
                  sei_nalu.get());
 

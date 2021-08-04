@@ -43,6 +43,10 @@ int ParseSeiNalu(const uint8_t *data,
     ++data;
     --length;
 
+    std::vector<uint8_t> payload_data = webrtc::H264::ParseRbsp(data, length);
+    data = payload_data.data();
+    length = payload_data.size();
+
     uint32_t sei_payload_type = 0;
     do {
         sei_payload_type += *data;
@@ -69,44 +73,58 @@ int ParseSeiNalu(const uint8_t *data,
     }
 
     *payload_type = sei_payload_type;
-
-    std::vector<uint8_t> sei_payload_data =
-        webrtc::H264::ParseRbsp(data, sei_payload_size);
-    destination->SetData(sei_payload_data.data(), sei_payload_data.size());
+    destination->SetData(data, sei_payload_size);
 
     return 0;
 }
 
 int WriteSeiNalu(const uint8_t *data,
                  size_t length,
+                 uint32_t payload_type,
                  const uint8_t uuid[SEI_UUID_SIZE],
                  rtc::Buffer *destination)
 {
-    if (data == nullptr || length == 0 || uuid == nullptr ||
-        destination == nullptr) {
+    if (data == nullptr || length == 0 || destination == nullptr) {
         return -1;
     }
 
-    std::unique_ptr<rtc::Buffer> sei_rbsp_buffer =
+    if (payload_type == kSeiPayloadTypeUnregistered && uuid == nullptr) {
+        return -1;
+    }
+
+    std::unique_ptr<rtc::Buffer> payload_buffer =
         std::make_unique<rtc::Buffer>();
-    webrtc::H264::WriteRbsp(data, length, sei_rbsp_buffer.get());
+    while (payload_type >= 0xFF) {
+        payload_buffer->AppendData(static_cast<uint8_t>(0xFF));
+        payload_type -= 0xFF;
+    }
+    payload_buffer->AppendData(static_cast<uint8_t>(payload_type));
+
+    uint32_t payload_size = length;
+    if (payload_type == kSeiPayloadTypeUnregistered) {
+        payload_size += SEI_UUID_SIZE;
+    }
+    while (payload_size >= 0xFF) {
+        payload_buffer->AppendData(static_cast<uint8_t>(0xFF));
+        payload_size -= 0xFF;
+    }
+    payload_buffer->AppendData(static_cast<uint8_t>(payload_size));
+
+    if (payload_type == kSeiPayloadTypeUnregistered) {
+        payload_buffer->AppendData(uuid, SEI_UUID_SIZE);
+    }
+    payload_buffer->AppendData(data, length);
+
+    std::unique_ptr<rtc::Buffer> rbsp_buffer = std::make_unique<rtc::Buffer>();
+    webrtc::H264::WriteRbsp(payload_buffer->data(),
+                            payload_buffer->size(),
+                            rbsp_buffer.get());
 
     destination->SetSize(0);
-
     destination->AppendData(kAnnexBFourBytesHeader,
                             sizeof(kAnnexBFourBytesHeader));
     destination->AppendData(kNaluTypeSei);
-    destination->AppendData(kSeiPayloadTypeUnregistered);
-
-    uint32_t sei_payload_size = SEI_UUID_SIZE + sei_rbsp_buffer->size();
-    while (sei_payload_size >= 0xFF) {
-        destination->AppendData(static_cast<uint8_t>(0xFF));
-        sei_payload_size -= 0xFF;
-    }
-    destination->AppendData(static_cast<uint8_t>(sei_payload_size));
-
-    destination->AppendData(uuid, SEI_UUID_SIZE);
-    destination->AppendData(sei_rbsp_buffer->data(), sei_rbsp_buffer->size());
+    destination->AppendData(rbsp_buffer->data(), rbsp_buffer->size());
     destination->AppendData(kRbspTrailingBits);
 
     return 0;
