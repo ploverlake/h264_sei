@@ -10,3 +10,7 @@ $ cd build
 $ make
 $ ./h264_sei_test
 ```
+
+## Reference
+
+* [FFmpeg从入门到精通——进阶篇，SEI那些事儿](https://zhuanlan.zhihu.com/p/33720871)
