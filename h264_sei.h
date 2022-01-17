@@ -33,11 +33,11 @@
  * @param destination, On output, the SEI data
  * return 0 on success, otherwise -1
  */
-int ParseSeiNalu(const uint8_t *data,
+int ParseSeiNalu(const uint8_t* data,
                  size_t length,
-                 uint32_t *payload_type,
+                 uint32_t* payload_type,
                  uint8_t uuid[SEI_UUID_SIZE],
-                 rtc::Buffer *destination);
+                 rtc::Buffer* destination);
 
 /**
  * Generate a NALU with custom SEI data
@@ -49,10 +49,10 @@ int ParseSeiNalu(const uint8_t *data,
  * @param destination, On output, the NALU data
  * return 0 on success, otherwise -1
  */
-int WriteSeiNalu(const uint8_t *data,
+int WriteSeiNalu(const uint8_t* data,
                  size_t length,
                  uint32_t payload_type,
                  const uint8_t uuid[SEI_UUID_SIZE],
-                 rtc::Buffer *destination);
+                 rtc::Buffer* destination);
 
 #endif /* H264_SEI_H_ */
