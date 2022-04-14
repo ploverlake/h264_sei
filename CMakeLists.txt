@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(h264_sei)
+project(h264_sei LANGUAGES CXX)
 
 option(BUILD_SEI_EXAMPLE "Build example" ON)
 
@@ -8,11 +8,14 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# cmake-format: off
 set(SOURCE_FILES
-    h264_sei.cc webrtc/src/rtc_base/checks.cc
+    h264_sei.cc
+    webrtc/src/rtc_base/checks.cc
     webrtc/src/rtc_base/zero_memory.cc
     webrtc/src/common_video/h264/h264_common.cc
 )
+# cmake-format: on
 
 # Create target.
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
